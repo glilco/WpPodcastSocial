@@ -9,7 +9,29 @@ Author URI: https://github.com/glilco/
 License: GPL2
 */
 
+function create_pages_fly($pageName, $pageContent="Starter content") {
+    $createPage = array(
+      'post_title'    => $pageName,
+      'post_content'  => $pageContent,
+      'post_status'   => 'publish',
+      'post_author'   => 1,
+      'post_type'     => 'page',
+      'post_name'     => $pageName
+    );
 
+    // Insert the post into the database
+    wp_insert_post( $createPage );
+}
+
+function create_podcast_pages() {
+    if( get_page_by_title( 'cadastrapodcast' ) == NULL )
+        create_pages_fly( 'cadastrapodcast' );
+    if( get_page_by_title( 'usuariopodcast' ) == NULL )
+        create_pages_fly( 'usuariopodcast' );
+    if( get_page_by_title( 'podcastcadastrado' ) == NULL )
+        create_pages_fly( 'podcastcadastrado', "Podcast cadastrado com sucesso" );   
+}
+add_action('init', 'create_podcast_pages');
 
 
 function podcast_group_types() {
@@ -35,7 +57,7 @@ function rewrite_users_podcast(){
     global $wp; 
     $wp->add_query_var('podcastusername');
     add_rewrite_rule(
-        '^([^/]+)/?$',
+        '^user/([^/]+)/?$',
         'index.php?pagename=usuariopodcast&podcastusername=$matches[1]',
         'top' );
         
@@ -51,6 +73,8 @@ function plugin_function_name($template) {
         if($usuario) {
             return plugin_dir_path( __FILE__ ) . '/page-usuariopodcast.php';
         }
+    } else if(is_page() && $pagename=="cadastrapodcast") {
+        return plugin_dir_path( __FILE__ ) . '/page-cadastrapodcast.php';
     }
     return $template;
 }
@@ -60,10 +84,10 @@ add_filter( "page_template", "plugin_function_name" );
 
  
 function redireciona_nao_usuario() {
-  $pagename = get_query_var('pagename');
+    $pagename = get_query_var('pagename');
     if(is_page() && $pagename=="usuariopodcast") {
         $usuario_username = get_query_var('podcastusername');
-		$usuario = get_user_by( "slug", $usuario_username );
+	    $usuario = get_user_by( "slug", $usuario_username );
         if(!$usuario) {
             global $wp_query;
             $wp_query->set_404();
@@ -133,4 +157,100 @@ add_action( 'bp_include', 'bp_group_meta_init' );
  * Create groups
  */
 require plugin_dir_path( __FILE__ ) . '/bp-podcasts-create-group.php';
+
+
+
+function recebe_feed_url() {
+    $feed_parse = parse_podcast_feed($_POST["feed_url"]);
+    var_dump($feed_parse);
+    
+    die();
+    
+    wp_redirect( get_permalink( get_page_by_title('podcastcadastrado') ) );
+    exit(); 
+}
+add_action( 'admin_post_nopriv_cadastra_podcast', 'recebe_feed_url' );
+add_action( 'admin_post_cadastra_podcast', 'recebe_feed_url' );
+
+
+function parse_podcast_feed($feed_url) {
+//Reading XML using the SAX(Simple API for XML) parser 
+   global $podcast, $elements, $is_image, $continue_parsing;
+   $podcast   = array();
+   $elements   = null;
+   $is_image = false;
+   $parser = xml_parser_create(); 
+   $continue_parsing = true;
+
+   
+   // Called to this function when tags are opened 
+   function startElements($parser, $name, $attrs) {
+      global $podcast, $elements, $is_image,$continue_parsing;
+      
+      if(!empty($name)) {
+         $elements = $name;
+         $is_image = $name == "IMAGE"?true:$is_image;
+         
+         if($name == "ITEM") {
+            $continue_parsing = false;
+         }
+      }
+   }
+   
+   // Called to this function when tags are closed 
+   function endElements($parser, $name) {
+      global $elements,$is_image, $continue_parsing;
+      
+      if(!empty($name) && $continue_parsing) {
+         $elements = null;
+         if($name == "IMAGE") {
+            $is_image = false;
+         }
+      }
+   }
+   
+   // Called on the text between the start and end of the tags
+   function characterData($parser, $data) {
+      global $podcast, $elements,$is_image,$continue_parsing;
+      
+      if(!empty($data) && $continue_parsing) {
+         if ($elements == 'TITLE' || $elements == 'LINK' ||  $elements == 'DESCRIPTION' ||  $elements == 'URL') {
+            if($is_image) {
+                if($elements == 'URL') {
+                    $podcast[$elements] = $data;
+                }
+            } else {
+                if($elements != 'URL') {
+                    $podcast[$elements] = $data;
+                }
+            }
+         }
+      }
+   }
+   
+   // Creates a new XML parser and returns a resource handle referencing it to be used by the other XML functions. 
+   
+   
+   xml_set_element_handler($parser, "startElements", "endElements");
+   xml_set_character_data_handler($parser, "characterData");
+   
+   // open xml file
+   if (!($handle = fopen($feed_url, "r"))) {
+      return false;
+   }
+   
+   while($data = fread($handle, 4096)) {
+      if(!$continue_parsing) {
+        break;
+      }
+      $ok = xml_parse($parser, $data);  // start parsing an xml document 
+   }
+   
+   xml_parser_free($parser);
+   return $podcast;
+   
+}
+
+
+
 
