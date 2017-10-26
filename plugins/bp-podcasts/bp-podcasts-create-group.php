@@ -1,6 +1,6 @@
 <?php
 
-function create_a_group($name, $description, $site_link, $feed_url) {
+function create_a_group($name, $description, $site_link, $feed_url, $image_url) {
    	$parameters = array(
 		'name'         => $name,
 		'description'  => $description,
@@ -20,8 +20,25 @@ function create_a_group($name, $description, $site_link, $feed_url) {
         groups_update_groupmeta( $id, 'podcast-site', $site_link );
         groups_update_groupmeta( $id, 'podcast-feed-url', $feed_url );
     
-        return $id;    
-    }    
+    
+        $upload_dir   = trailingslashit(wp_upload_dir()['path']);
+        
+        $file_path = $upload_dir . basename($image_url);
+        file_put_contents($file_path, fopen($image_url, 'r'));
+        
+        $type_params = array(
+            'item_id'   => $id,
+		    'object'    => 'group',
+		    'component' => 'groups',
+		    'image'     => $file_path,
+        );
+        
+        if(!bp_attachments_create_item_type('cover_image', $type_params)) {
+            return false;
+        }
+        
+        return $id;
+    }
+    
     return false;
-
 }

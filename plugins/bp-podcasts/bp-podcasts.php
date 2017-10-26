@@ -164,7 +164,9 @@ function recebe_feed_url() {
     $feed_parse = parse_podcast_feed($_POST["feed_url"]);
     var_dump($feed_parse);
     
-    die();
+    create_a_group($feed_parse['TITLE'], $feed_parse['DESCRIPTION'], $feed_parse['LINK'], $_POST["feed_url"], $feed_parse['URL']);
+    
+    //die();
     
     wp_redirect( get_permalink( get_page_by_title('podcastcadastrado') ) );
     exit(); 
