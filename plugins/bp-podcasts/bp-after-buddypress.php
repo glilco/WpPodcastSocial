@@ -1,5 +1,12 @@
 <?php
 
+if(!bp_is_active('groups')) {
+  die('Needs BuddyPress groups to work');
+}
+
+if ( ! function_exists( 'wp_handle_upload' ) ) require_once( ABSPATH . 'wp-admin/includes/file.php' );
+
+
 function create_pages_fly($pageName, $pageContent="Starter content") {
     $createPage = array(
       'post_title'    => $pageName,
@@ -19,8 +26,8 @@ function create_podcast_pages() {
         create_pages_fly( 'cadastrapodcast' );
     if( get_page_by_title( 'usuariopodcast' ) == NULL )
         create_pages_fly( 'usuariopodcast' );
-    if( get_page_by_title( 'podcastcadastrado' ) == NULL )
-        create_pages_fly( 'podcastcadastrado', "Podcast cadastrado com sucesso" );   
+    if( get_page_by_title( 'uploadopml' ) == NULL )
+        create_pages_fly( 'uploadopml' );   
 }
 add_action('init', 'create_podcast_pages');
 
@@ -47,8 +54,10 @@ function plugin_function_name($template) {
         if($usuario) {
             return plugin_dir_path( __FILE__ ) . '/page-usuariopodcast.php';
         }
-    } else if(is_page() && $pagename=="cadastrapodcast") {
+    } else if(is_page() && $pagename=='cadastrapodcast') {
         return plugin_dir_path( __FILE__ ) . '/page-cadastrapodcast.php';
+    } else if(is_page() && $pagename=='uploadopml') {
+        return plugin_dir_path( __FILE__ ) . '/page-uploadopml.php';
     }
     return $template;
 }
@@ -128,6 +137,14 @@ function bp_group_meta_init() {
 add_action( 'bp_include', 'bp_group_meta_init' );
 /* If you have code that does not need BuddyPress to run, then add it here. */
 
+
+
+require( plugin_dir_path( __FILE__ ) . 'bp-class-parse-feed.php' );
+
+require( plugin_dir_path( __FILE__ ) . 'bp-class-parse-opml.php' );
+
+
+
 /**
  * Create groups
  */
@@ -136,108 +153,93 @@ require plugin_dir_path( __FILE__ ) . '/bp-podcasts-create-group.php';
 
 
 function recebe_feed_url() {
-    $feed_parse = parse_podcast_feed($_POST["feed_url"]);
+    $podcast = create_podcast_feed($_POST["feed_url"]);
     
-    $groups = groups_get_groups(array(
-      'meta_query' => array(
-          'meta_key'=>'podcast-feed-url',
-          'meta_value'=>untrailingslashit($_POST["feed_url"])
-      )
-    ));
-    
-    $group = null;
-    if($groups['total'] > 0) {
-      $group = $groups['groups'][0];
-    } else {
-      $group_id = create_a_group($feed_parse['TITLE'], $feed_parse['DESCRIPTION'], $feed_parse['LINK'], $_POST["feed_url"], $feed_parse['URL']);
-      $group = groups_get_group( array( 'group_id' => $group_id) );
-    }
-    
-    wp_redirect( bp_get_group_permalink( $group ) );
+    wp_redirect( bp_get_group_permalink( $podcast ) );
     exit(); 
 }
 add_action( 'admin_post_nopriv_cadastra_podcast', 'recebe_feed_url' );
 add_action( 'admin_post_cadastra_podcast', 'recebe_feed_url' );
 
 
-function parse_podcast_feed($feed_url) {
-//Reading XML using the SAX(Simple API for XML) parser 
-   global $podcast, $elements, $is_image, $continue_parsing;
-   $podcast   = array();
-   $elements   = null;
-   $is_image = false;
-   $parser = xml_parser_create(); 
-   $continue_parsing = true;
 
-   
-   // Called to this function when tags are opened 
-   function startElements($parser, $name, $attrs) {
-      global $podcast, $elements, $is_image,$continue_parsing;
+
+function recebe_opml() {
+    if (!is_user_logged_in()) {
+        wp_redirect( get_permalink(get_page_by_title( 'uploadopml' )->ID) );
+    }
+    $opml_parser = new ParseOPML($_FILES['opml_file']['tmp_name']);
+    
+    $podcasts_urls = $opml_parser->parse_opml_file();
+    
+    foreach($podcasts_urls as $feed_url) {
+      $podcast = create_podcast_feed($feed_url);
+      echo '<br/> Podcast:';
+      var_dump($podcast);
+      echo '<br/> Feed URL';
+      var_dump($feed_url);
       
-      if(!empty($name)) {
-         $elements = $name;
-         $is_image = $name == "IMAGE"?true:$is_image;
-         
-         if($name == "ITEM") {
-            $continue_parsing = false;
-         }
+      if($podcast) {
+        echo '<br/> Groups Accept Invite:';
+        var_dump(groups_accept_invite( get_current_user_id(), $podcast->id ));
       }
-   }
-   
-   // Called to this function when tags are closed 
-   function endElements($parser, $name) {
-      global $elements,$is_image, $continue_parsing;
+    }
+die();
+    wp_redirect( home_url() );
+    exit(); 
+}
+add_action( 'admin_post_nopriv_upload_opml', 'recebe_opml' );
+add_action( 'admin_post_upload_opml', 'recebe_opml' );
+
+
+function create_podcast_feed($feed_url) {
+    $groups = get_existent_podcast_feed($feed_url);
+    
+    
+    $group = null;
+    if($groups['total'] > 0) {
+      $group = $groups['groups'][0];
+    } else {
+      $feed_parser = new ParseFeed($feed_url);
+      $podcast_data= $feed_parser->parse_podcast_feed();
+      unset($feed_parser);
       
-      if(!empty($name) && $continue_parsing) {
-         $elements = null;
-         if($name == "IMAGE") {
-            $is_image = false;
-         }
+      if(!$podcast_data) {
+          echo '<br /> Não foi possível obter dados do podcast ';
+          return false;
       }
-   }
-   
-   // Called on the text between the start and end of the tags
-   function characterData($parser, $data) {
-      global $podcast, $elements,$is_image,$continue_parsing;
       
-      if(!empty($data) && $continue_parsing) {
-         if ($elements == 'TITLE' || $elements == 'LINK' ||  $elements == 'DESCRIPTION' ||  $elements == 'URL') {
-            if($is_image) {
-                if($elements == 'URL') {
-                    $podcast[$elements] = $data;
-                }
-            } else {
-                if($elements != 'URL') {
-                    $podcast[$elements] = $data;
-                }
-            }
-         }
-      }
-   }
-   
-   // Creates a new XML parser and returns a resource handle referencing it to be used by the other XML functions. 
-   
-   
-   xml_set_element_handler($parser, "startElements", "endElements");
-   xml_set_character_data_handler($parser, "characterData");
-   
-   // open xml file
-   if (!($handle = fopen($feed_url, "r"))) {
-      return false;
-   }
-   
-   while($data = fread($handle, 4096)) {
-      if(!$continue_parsing) {
-        break;
-      }
-      $ok = xml_parse($parser, $data);  // start parsing an xml document 
-   }
-   
-   xml_parser_free($parser);
-   return $podcast;
-   
+      echo '<br/><br/> Podcast Data:';
+      
+      var_dump($podcast_data);
+      echo '<br/><br/>';
+      
+      
+      
+      $group_id = create_a_group($podcast_data['TITLE'], $podcast_data['DESCRIPTION'], $podcast_data['LINK'], $feed_url, $podcast_data['URL']);
+      $group = groups_get_group( array( 'group_id' => $group_id) );
+    }
+    
+    echo '<br /> Grupo metadata' . $group->name . '<br />';
+    var_dump(groups_get_groupmeta($group->id));
+    echo '<br /><br />';
+  
+    return $group;
 }
 
+function get_existent_podcast_feed($feed_url) {
+    $groups = groups_get_groups(array(
+      'meta_query' => array(
+          'meta_key'=>'podcast-feed-url',
+          'meta_value'=>untrailingslashit($feed_url)
+      )
+    ));
+    
+    echo '<br /><br /> Grupos existentes <br />';
+    var_dump($groups);
+    echo '<br /> Grupos existentes, Feed URL ' . $feed_url . '<br /><br />';
+    return $groups;
+}
 
 
 

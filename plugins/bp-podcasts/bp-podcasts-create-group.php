@@ -1,13 +1,25 @@
 <?php
 
 function create_a_group($name, $description, $site_link, $feed_url, $image_url) {
+    $super_admins = get_super_admins();
+    $creator_id = get_user_by('login', $super_admins[0])->ID;
+  
+    
+    $save_current_user = wp_get_current_user();
+    /*$save_current_user = ;
+    $sage_current_user_id = ;*/
+    
+    wp_set_current_user(get_user_by('login', $super_admins[0])->ID, get_user_by('login', $super_admins[0])->name);
+  
    	$parameters = array(
+    'creator_id'   => $creator_id,
 		'name'         => $name,
 		'description'  => $description,
 		'enable_forum' => 0,
 		'date_created' => bp_core_current_time()
 	);
-
+  
+  
 
     $saved = groups_create_group($parameters);
 
@@ -48,8 +60,11 @@ function create_a_group($name, $description, $site_link, $feed_url, $image_url) 
             return false;
         }
         
+        
         wp_delete_file($shrinked['path']);
         wp_delete_file($file_path);
+        
+        wp_set_current_user($save_current_user->ID, $save_current_user->name);
         
         return $id;
     }
