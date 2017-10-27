@@ -184,7 +184,6 @@ function recebe_opml() {
         var_dump(groups_accept_invite( get_current_user_id(), $podcast->id ));
       }
     }
-die();
     wp_redirect( home_url() );
     exit(); 
 }
@@ -229,10 +228,11 @@ function create_podcast_feed($feed_url) {
 
 function get_existent_podcast_feed($feed_url) {
     $groups = groups_get_groups(array(
-      'meta_query' => array(
-          'meta_key'=>'podcast-feed-url',
-          'meta_value'=>untrailingslashit($feed_url)
-      )
+	  'type'=>'active',
+      'meta_query' => array(array(
+          'key'=>'podcast-feed-url',
+          'value'=>esc_url_raw(untrailingslashit($feed_url))
+      ))
     ));
     
     echo '<br /><br /> Grupos existentes <br />';

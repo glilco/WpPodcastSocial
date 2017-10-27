@@ -51,11 +51,11 @@ class ParseFeed {
          if ($this->elements == 'TITLE' || $this->elements == 'LINK' ||  $this->elements == 'DESCRIPTION' ||  $this->elements == 'URL') {
             if($this->is_image) {
                 if($this->elements == 'URL') {
-                    $this->podcast[$this->elements] = $data;
+                    $this->podcast[$this->elements] .= $data;
                 }
             } else {
                 if($this->elements != 'URL') {
-                    $this->podcast[$this->elements] = $data;
+                    $this->podcast[$this->elements] .= $data;
                 }
             }
          }

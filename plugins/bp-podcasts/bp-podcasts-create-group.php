@@ -29,8 +29,8 @@ function create_a_group($name, $description, $site_link, $feed_url, $image_url) 
         groups_update_groupmeta( $id, 'total_member_count', 1 );
         groups_update_groupmeta( $id, 'last_activity', time() );
         
-        groups_update_groupmeta( $id, 'podcast-site', $site_link );
-        groups_update_groupmeta( $id, 'podcast-feed-url', untrailingslashit($feed_url) );
+        groups_update_groupmeta( $id, 'podcast-site', esc_url_raw($site_link) );
+        groups_update_groupmeta( $id, 'podcast-feed-url', esc_url_raw(untrailingslashit($feed_url)) );
     
     
         $upload_dir   = trailingslashit(wp_upload_dir()['path']);
