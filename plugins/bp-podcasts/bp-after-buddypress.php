@@ -1,4 +1,6 @@
 <?php
+global $debug_text;
+$debug_text = false;
 
 if(!bp_is_active('groups')) {
   die('Needs BuddyPress groups to work');
@@ -83,62 +85,6 @@ add_action( 'template_redirect', 'redireciona_nao_usuario' );
 
 
 
-
-
-function bp_group_meta_init() {
-    function custom_field($meta_key='') {
-        //get current group id and load meta_key value if passed. If not pass it blank
-        return groups_get_groupmeta( bp_get_group_id(), $meta_key) ;
-    }
-    //code if using seperate files require( dirname( __FILE__ ) . '/buddypress-group-meta.php' );
-    // This function is our custom field's form that is called in create a group and when editing group details
-    function group_header_fields_markup() {
-        global $bp, $wpdb;?>
-        <label for="podcast-site">Podcast Site</label>
-        <input id="podcast-site" type="text" name="podcast-site" value="<?php echo defined('custom_field')?custom_field('podcast-site'):""; ?>" />
-        <br>
-        <label for="podcast-feed-url">Podcast Feed URL</label>
-        <input id="podcast-feed-url" type="text" name="podcast-feed-url" value="<?php echo defined('custom_field')?custom_field('podcast-feed-url'):""; ?>" />
-        <br>
-    <?php 
-    }
-    // This saves the custom group meta – props to Boone for the function
-    // Where $plain_fields = array.. you may add additional fields, eg
-    //  $plain_fields = array(
-    //      'field-one',
-    //      'field-two'
-    //  );
-    function group_header_fields_save( $group_id ) {
-        global $bp, $wpdb;
-        $plain_fields = array(
-            'podcast-site',
-            'podcast-feed-url'
-        );
-        foreach( $plain_fields as $field ) {
-            $key = $field;
-            if ( isset( $_POST[$key] ) ) {
-                $value = $_POST[$key];
-                groups_update_groupmeta( $group_id, $field, $value );
-            }
-        }
-    }
-    
-    add_filter( 'groups_custom_group_fields_editable', 'group_header_fields_markup' );
-    add_action( 'groups_group_details_edited', 'group_header_fields_save' );
-    add_action( 'groups_created_group',  'group_header_fields_save' );
- 
-    // Show the custom field in the group header
-    function show_field_in_header( ) {
-        echo "<p> Site do podcast: <a href=\"" . custom_field('podcast-site') . "\">" . custom_field('podcast-site') . "</a></p>";
-        echo "<p> Feed do podcast: <a href=\"" . custom_field('podcast-feed-url') . "\">" . custom_field('podcast-feed-url') . "</a></p>";
-    }
-    add_action('bp_group_header_meta' , 'show_field_in_header') ;
-}
-add_action( 'bp_include', 'bp_group_meta_init' );
-/* If you have code that does not need BuddyPress to run, then add it here. */
-
-
-
 require( plugin_dir_path( __FILE__ ) . 'bp-class-parse-feed.php' );
 
 require( plugin_dir_path( __FILE__ ) . 'bp-class-parse-opml.php' );
@@ -162,28 +108,60 @@ add_action( 'admin_post_nopriv_cadastra_podcast', 'recebe_feed_url' );
 add_action( 'admin_post_cadastra_podcast', 'recebe_feed_url' );
 
 
+function formatSeconds( $seconds )
+{
+  $hours = 0;
+  $milliseconds = str_replace( "0.", '', $seconds - floor( $seconds ) );
 
+  if ( $seconds > 3600 )
+  {
+    $hours = floor( $seconds / 3600 );
+  }
+  $seconds = $seconds % 3600;
+
+
+  return str_pad( $hours, 2, '0', STR_PAD_LEFT )
+       . gmdate( ':i:s', $seconds )
+       . ($milliseconds ? ".$milliseconds" : '')
+  ;
+}
 
 function recebe_opml() {
+	global $debug_text;
+	
     if (!is_user_logged_in()) {
         wp_redirect( get_permalink(get_page_by_title( 'uploadopml' )->ID) );
     }
+    
+    $start_time = microtime(true);
+    
+    $user_id = get_current_user_id();
+    
     $opml_parser = new ParseOPML($_FILES['opml_file']['tmp_name']);
     
     $podcasts_urls = $opml_parser->parse_opml_file();
     
     foreach($podcasts_urls as $feed_url) {
       $podcast = create_podcast_feed($feed_url);
-      echo '<br/> Podcast:';
-      var_dump($podcast);
-      echo '<br/> Feed URL';
-      var_dump($feed_url);
+      if($debug_text)echo '<br/> Podcast:';
+      if($debug_text)var_dump($podcast);
+      if($debug_text)echo '<br/> Feed URL';
+      if($debug_text)var_dump($feed_url);
       
       if($podcast) {
-        echo '<br/> Groups Accept Invite:';
-        var_dump(groups_accept_invite( get_current_user_id(), $podcast->id ));
+        if($debug_text)echo "<br/> Groups Accept Invite: user: $user_id podcast: $podcast->id ";
+        $accept_user = groups_accept_invite( $user_id , $podcast->id );
+        if($debug_text)var_dump($accept_user);
       }
     }
+    
+    $end_time = microtime(true);
+    
+    $difference = formatSeconds(($end_time - $start_time));
+    echo "<br />Tempo para cadastrar todos os podcasts: ". ($end_time - $start_time) ."  <br />";
+    echo "<br />Tempo para cadastrar todos os podcasts: $difference <br />";
+    
+    //die();
     wp_redirect( home_url() );
     exit(); 
 }
@@ -192,6 +170,7 @@ add_action( 'admin_post_upload_opml', 'recebe_opml' );
 
 
 function create_podcast_feed($feed_url) {
+	global $debug_text;
     $groups = get_existent_podcast_feed($feed_url);
     
     
@@ -203,43 +182,70 @@ function create_podcast_feed($feed_url) {
       $podcast_data= $feed_parser->parse_podcast_feed();
       unset($feed_parser);
       
-      if(!$podcast_data) {
-          echo '<br /> Não foi possível obter dados do podcast ';
+      
+      if($debug_text)echo '<br/><br/> Podcast Data:';
+      
+      if($debug_text)var_dump($podcast_data);
+      if($debug_text)echo '<br/><br/>';
+      
+      if(!$podcast_data || !isset($podcast_data['TITLE']) || !isset($podcast_data['DESCRIPTION']) || !isset($podcast_data['LINK'])) {
+          if($debug_text)echo '<br /> Não foi possível obter dados do podcast ';
           return false;
       }
       
-      echo '<br/><br/> Podcast Data:';
-      
-      var_dump($podcast_data);
-      echo '<br/><br/>';
-      
-      
-      
-      $group_id = create_a_group($podcast_data['TITLE'], $podcast_data['DESCRIPTION'], $podcast_data['LINK'], $feed_url, $podcast_data['URL']);
-      $group = groups_get_group( array( 'group_id' => $group_id) );
+      $groups = get_existent_podcast_feed($feed_url, $podcast_data['LINK']);
+      if($groups['total'] > 0) {
+		$group = $groups['groups'][0];
+	  } else {
+		$url_image = isset($podcast_data['URL'])?$podcast_data['URL']:'';
+		$itunes_image = isset($podcast_data['ITUNESIMAGE'])?$podcast_data['ITUNESIMAGE']:'';
+		$group_id = create_a_group($podcast_data['TITLE'], $podcast_data['DESCRIPTION'], $podcast_data['LINK'],  $feed_url, $url_image, $itunes_image);
+		$group = groups_get_group( array( 'group_id' => $group_id) );
+	  }
     }
     
-    echo '<br /> Grupo metadata' . $group->name . '<br />';
-    var_dump(groups_get_groupmeta($group->id));
-    echo '<br /><br />';
+    if($debug_text)echo '<br /> Grupo metadata' . $group->name . '<br />';
+    if($debug_text)var_dump(groups_get_groupmeta($group->id));
+    if($debug_text)echo '<br /><br />';
   
     return $group;
 }
 
-function get_existent_podcast_feed($feed_url) {
-    $groups = groups_get_groups(array(
-	  'type'=>'active',
-      'meta_query' => array(array(
+function get_existent_podcast_feed($feed_url, $podcast_site="") {
+	global $debug_text;
+	$meta_query = array(
+      'relation' => 'OR',
+      array(
           'key'=>'podcast-feed-url',
           'value'=>esc_url_raw(untrailingslashit($feed_url))
-      ))
+      )
+	);
+	
+	if(isset($podcast_site) && trim($podcast_site) !== '') {
+		$meta_query[] = array(
+          'key'=>'podcast-site',
+          'value'=>esc_url_raw(untrailingslashit($podcast_site))
+		);
+	}
+	
+    $groups = groups_get_groups(array(
+	  'type'=>'active',
+	  'per_page' => 1,
+      'meta_query' => $meta_query
     ));
     
-    echo '<br /><br /> Grupos existentes <br />';
-    var_dump($groups);
-    echo '<br /> Grupos existentes, Feed URL ' . $feed_url . '<br /><br />';
+    if($debug_text)echo '<br /><br /> Grupos existentes <br />';
+    if($debug_text)var_dump($groups);
+    if($debug_text)echo '<br /> Grupos existentes, Feed URL ' . $feed_url . '<br /><br />';
     return $groups;
 }
 
-
+add_action( 'wp_enqueue_scripts', 'addcssAndScripts');
+function addcssAndScripts()
+{
+    if ( is_page('uploadopml') )
+    {
+        wp_enqueue_script( 'load-button', plugin_dir_url( __FILE__ ) . 'bp-load-button.js', array('jquery'));
+    }
+}
 

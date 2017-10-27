@@ -13,7 +13,7 @@ class ParseFeed {
     $this->parser =  xml_parser_create(); 
     xml_set_element_handler($this->parser, array($this, "startElements"), array($this, "endElements"));
     xml_set_character_data_handler($this->parser, array($this, "characterData"));
-    $this->podcast_feed = $url_feed;
+    $this->podcast_feed = esc_url_raw($url_feed);
   }
 
   function __destruct() {
@@ -22,9 +22,14 @@ class ParseFeed {
   
   function startElements($parser, $name, $attrs) {
       
-      if(!empty($name)) {
+      if(!empty($name) && $this->continue_parsing) {
+		 
          $this->elements = $name;
          $this->is_image = $name == "IMAGE"?true:$this->is_image;
+         
+         if($name == "ITUNES:IMAGE" && isset($attrs["HREF"])) {
+			 $this->podcast["ITUNESIMAGE"] = $attrs["HREF"];
+		 }
          
          if($name == "ITEM") {
             $this->continue_parsing = false;
@@ -51,11 +56,17 @@ class ParseFeed {
          if ($this->elements == 'TITLE' || $this->elements == 'LINK' ||  $this->elements == 'DESCRIPTION' ||  $this->elements == 'URL') {
             if($this->is_image) {
                 if($this->elements == 'URL') {
-                    $this->podcast[$this->elements] .= $data;
+					if (!isset($this->podcast["URL"]) || trim($this->podcast["URL"])==='') {
+						$this->podcast[$this->elements] = $data;
+					}
                 }
             } else {
                 if($this->elements != 'URL') {
-                    $this->podcast[$this->elements] .= $data;
+					if(isset($this->podcast[$this->elements])) {
+						$this->podcast[$this->elements] .= $data;
+					} else {
+						$this->podcast[$this->elements] = $data;
+					}
                 }
             }
          }
@@ -64,7 +75,7 @@ class ParseFeed {
    
    function parse_podcast_feed() {
      // open xml file
-     if (!($handle = fopen($this->podcast_feed, "r"))) {
+     if (!($handle = @fopen($this->podcast_feed, "r"))) {
         return false;
      }
      
@@ -77,4 +88,33 @@ class ParseFeed {
      
      return $this->podcast;
    }
+   
+   function checkImageUrl($url) {
+	    // Simple check
+	    if (!$url) { return FALSE; }
+	    // Create cURL resource using the URL string passed in
+	    /*$curl_resource = curl_init($url);
+	    // Set cURL option and execute the "query"
+	    curl_setopt($curl_resource, CURLOPT_RETURNTRANSFER, true);
+	    curl_exec($curl_resource);
+	    // Check for the 404 code (page must have a header that correctly display 404 error code according to HTML standards
+	    if(curl_getinfo($curl_resource, CURLINFO_HTTP_CODE) == 404) {
+	        // Code matches, close resource and return false
+	        curl_close($curl_resource);
+	        return FALSE;
+	    } else {
+	        // No matches, close resource and return true
+	        curl_close($curl_resource);
+	        if(!getimagesize($url)) {
+				return FALSE;
+			}
+	        return TRUE;
+	    }*/
+	    
+	    if(!@getimagesize($url)) {
+			return false;
+		}
+	    // Should never happen, but if something goofy got here, return false value
+	    return true;
+	}
 }

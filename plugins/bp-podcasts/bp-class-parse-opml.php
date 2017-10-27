@@ -36,7 +36,7 @@ class ParseOPML {
    
    function parse_opml_file() {
      // open xml file
-     if (!($handle = fopen($this->opml_file, "r"))) {
+     if (!($handle = @fopen($this->opml_file, "r"))) {
         return false;
      }
      
