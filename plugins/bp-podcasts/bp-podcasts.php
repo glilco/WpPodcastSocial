@@ -61,7 +61,7 @@ function my_plugin_init() {
 		echo "<p> Site do podcast: <a href=\"" . custom_field('podcast-site') . "\">" . custom_field('podcast-site') . "</a></p>";
 		echo "<p> Feed do podcast: <a href=\"" . custom_field('podcast-feed-url') . "\">" . custom_field('podcast-feed-url') . "</a></p>";
 		if(trim(custom_field('podcast-author')) != '') {
-			echo "<p> Autoria: <a href=\"" . custom_field('podcast-author') . "\">" . custom_field('podcast-author') . "</a></p>";
+			echo "<p> Autoria: " . custom_field('podcast-author') .  "</p>";
 		}
 	}
 	add_action('bp_group_header_meta' , 'show_field_in_header') ;

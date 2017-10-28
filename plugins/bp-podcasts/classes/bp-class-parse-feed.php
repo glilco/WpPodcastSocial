@@ -65,7 +65,7 @@ class ParseFeed {
                 if($this->elements != 'URL') {
 					if(isset($this->podcast[$this->elements])) {
 						$this->podcast[$this->elements] .= $data;
-					} else  if (!$this->itunes_sumary) {
+					} else  if (!$this->itunes_sumary || $this->elements != 'DESCRIPTION') {
 						$this->podcast[$this->elements] = $data;
 					}
                 }
