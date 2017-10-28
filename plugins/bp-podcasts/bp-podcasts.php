@@ -64,3 +64,5 @@ function my_plugin_init() {
     require( plugin_dir_path( __FILE__ ) . 'bp-after-buddypress.php' );
 }
 add_action( 'bp_include', 'my_plugin_init' );
+
+

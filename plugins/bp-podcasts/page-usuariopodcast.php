@@ -21,7 +21,8 @@ get_header(); ?>
 	<div id="primary" class="content-area">
 		<main id="main" class="site-main" role="main">
 			<div id="buddypress">
-			<?php
+			<div id="item-header" role="complementary">
+<?php
 			
 				
 			$usuario_username = get_query_var('podcastusername');
@@ -30,6 +31,74 @@ get_header(); ?>
 			
 			if($usuario) :
 			
+			
+			global $bp;
+
+$bp->displayed_user->id = $usuario->ID;
+$bp->displayed_user->domain = bp_core_get_user_domain( $bp->displayed_user->id );
+$bp->displayed_user->userdata = bp_core_get_core_userdata( $bp->displayed_user->id );
+$bp->displayed_user->fullname = bp_core_get_user_displayname( $bp->displayed_user->id );
+			
+			?>
+
+
+				<div id="item-header-avatar">
+	<a href="<?php bp_displayed_user_link(); ?>">
+
+		<?php bp_displayed_user_avatar( 'type=full' ); ?>
+
+	</a>
+</div><!-- #item-header-avatar -->
+
+<div id="item-header-content">
+
+	<h2>
+		<a href="<?php bp_displayed_user_link(); ?>"><?php bp_displayed_user_fullname(); ?></a>
+	</h2>
+
+	<?php if ( bp_is_active( 'activity' ) && bp_activity_do_mentions() ) : ?>
+		<span class="user-nicename">@<?php bp_displayed_user_mentionname(); ?></span>
+	<?php endif; ?>
+
+	<span class="activity"><?php bp_last_activity( bp_displayed_user_id() ); ?></span>
+
+	<?php do_action( 'bp_before_member_header_meta' ); ?>
+
+	<div id="item-meta">
+
+		<?php if ( bp_is_active( 'activity' ) ) : ?>
+
+			<div id="latest-update">
+
+				<?php bp_activity_latest_update( bp_displayed_user_id() ); ?>
+
+			</div>
+
+		<?php endif; ?>
+
+		<div id="item-buttons">
+
+			<?php do_action( 'bp_member_header_actions' ); ?>
+
+		</div><!-- #item-buttons -->
+
+		<?php
+		/***
+		 * If you'd like to show specific profile fields here use:
+		 * bp_member_profile_data( 'field=About Me' ); -- Pass the name of the field
+		 */
+		 do_action( 'bp_profile_header_meta' );
+
+		 ?>
+
+	</div><!-- #item-meta -->
+
+</div><!-- #item-header-content -->
+
+			</div><!-- #item-header -->
+				
+				
+<?php			
 				$args = array(
 					 'user_id' => $usuario->ID
 				);
