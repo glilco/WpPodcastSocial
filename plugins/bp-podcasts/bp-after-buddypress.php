@@ -153,7 +153,8 @@ function create_podcast_feed($feed_url) {
 	  } else {
 		$url_image = isset($podcast_data['URL'])?$podcast_data['URL']:'';
 		$itunes_image = isset($podcast_data['ITUNESIMAGE'])?$podcast_data['ITUNESIMAGE']:'';
-		$group_id = create_a_group($podcast_data['TITLE'], $podcast_data['DESCRIPTION'], $podcast_data['LINK'],  $feed_url, $url_image, $itunes_image);
+		$itunes_author = isset($podcast_data['ITUNES:AUTHOR'])?$podcast_data['ITUNES:AUTHOR']:'';
+		$group_id = create_a_group($podcast_data['TITLE'], $podcast_data['DESCRIPTION'], $podcast_data['LINK'],  $feed_url, $url_image, $itunes_image, $itunes_author);
 		$group = groups_get_group( array( 'group_id' => $group_id) );
 	  }
     }

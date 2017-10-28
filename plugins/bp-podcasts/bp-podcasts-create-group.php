@@ -1,6 +1,6 @@
 <?php
 
-function create_a_group($name, $description, $site_link, $feed_url, $image_url, $itunes_image) {
+function create_a_group($name, $description, $site_link, $feed_url, $image_url, $itunes_image, $itunes_author) {
 	//$super_admins = get_super_admins();
 	$user_admin = get_users(array('role'=>'administrator','number'=>1))[0];
 	
@@ -26,6 +26,10 @@ function create_a_group($name, $description, $site_link, $feed_url, $image_url, 
         
         groups_update_groupmeta( $id, 'podcast-site', esc_url_raw(untrailingslashit($site_link)) );
         groups_update_groupmeta( $id, 'podcast-feed-url', esc_url_raw(untrailingslashit($feed_url)) );
+        
+        if(isset($itunes_author) && trim($itunes_author) != '') {
+			groups_update_groupmeta( $id, 'podcast-author', $itunes_author );
+		}
         
         /* Choose image to use. If there is not a valid image, return the group id */
         if(isset($itunes_image) && trim($itunes_image) !== '' && @getimagesize($itunes_image)) {

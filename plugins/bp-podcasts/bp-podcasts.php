@@ -25,6 +25,9 @@ function my_plugin_init() {
 		<label for="podcast-feed-url">Podcast Feed URL</label>
 		<input id="podcast-feed-url" type="text" name="podcast-feed-url" value="<?php echo defined('custom_field')?custom_field('podcast-feed-url'):""; ?>" />
 		<br>
+		<label for="podcast-author">Podcast Author</label>
+		<input id="podcast-author" type="text" name="podcast-author" value="<?php echo defined('custom_field')?custom_field('podcast-author'):""; ?>" />
+		<br>
 	<?php 
 	}
 	// This saves the custom group meta – props to Boone for the function
@@ -37,7 +40,8 @@ function my_plugin_init() {
 		global $bp, $wpdb;
 		$plain_fields = array(
 			'podcast-site',
-			'podcast-feed-url'
+			'podcast-feed-url',
+			'podcast-author'
 		);
 		foreach( $plain_fields as $field ) {
 			$key = $field;
@@ -56,6 +60,9 @@ function my_plugin_init() {
 	function show_field_in_header( ) {
 		echo "<p> Site do podcast: <a href=\"" . custom_field('podcast-site') . "\">" . custom_field('podcast-site') . "</a></p>";
 		echo "<p> Feed do podcast: <a href=\"" . custom_field('podcast-feed-url') . "\">" . custom_field('podcast-feed-url') . "</a></p>";
+		if(trim(custom_field('podcast-author')) != '') {
+			echo "<p> Autoria: <a href=\"" . custom_field('podcast-author') . "\">" . custom_field('podcast-author') . "</a></p>";
+		}
 	}
 	add_action('bp_group_header_meta' , 'show_field_in_header') ;
 	

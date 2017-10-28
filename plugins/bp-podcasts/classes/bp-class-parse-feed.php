@@ -8,6 +8,7 @@ class ParseFeed {
   private $parser;
   private $continue_parsing = true;
   private $podcast_feed;
+  private $itunes_sumary = false;
   
   function __construct($url_feed) {
     $this->parser =  xml_parser_create(); 
@@ -53,7 +54,7 @@ class ParseFeed {
    function characterData($parser, $data) {
       
       if(!empty($data) && $this->continue_parsing) {
-         if ($this->elements == 'TITLE' || $this->elements == 'LINK' ||  $this->elements == 'DESCRIPTION' ||  $this->elements == 'URL') {
+         if ($this->elements == 'TITLE' || $this->elements == 'LINK' ||  $this->elements == 'DESCRIPTION' ||  $this->elements == 'URL' || $this->elements == 'ITUNES:AUTHOR' ) {
             if($this->is_image) {
                 if($this->elements == 'URL') {
 					if (!isset($this->podcast["URL"]) || trim($this->podcast["URL"])==='') {
@@ -64,22 +65,30 @@ class ParseFeed {
                 if($this->elements != 'URL') {
 					if(isset($this->podcast[$this->elements])) {
 						$this->podcast[$this->elements] .= $data;
-					} else {
+					} else  if (!$this->itunes_sumary) {
 						$this->podcast[$this->elements] = $data;
 					}
                 }
             }
-         }
+         } else if($this->elements == 'ITUNES:SUMMARY') {
+			 if(!isset($this->podcast['DESCRIPTION'])) {
+				 $this->itunes_sumary = true;
+				 $this->podcast['DESCRIPTION'] = $data;
+			 } else if($this->itunes_sumary) {
+				 $this->podcast['DESCRIPTION'] .= $data;
+			 }
+		 }
       }
    }
    
    function parse_podcast_feed() {
+	 ini_set ('user_agent', $_SERVER['HTTP_USER_AGENT']); 
      // open xml file
      if (!($handle = @fopen($this->podcast_feed, "r"))) {
         return false;
      }
      
-     while($data = fread($handle, 4096)) {
+     while($data = @fread($handle, 4096)) {
         if(!$this->continue_parsing) {
           break;
         }
