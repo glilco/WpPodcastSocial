@@ -6,7 +6,6 @@ function create_a_group($name, $description, $site_link, $feed_url, $image_url, 
 	
     $creator_id = $user_admin->ID;
 	
-    var_dump($creator_id);
    	$parameters = array(
     'creator_id'   => $creator_id,
 		'name'         => $name,
