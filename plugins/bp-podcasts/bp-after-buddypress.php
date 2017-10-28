@@ -2,7 +2,7 @@
 global $debug_text;
 $debug_text = false;
 
-if(!bp_is_active('groups')) {
+if(!bp_is_active('groups') && !is_admin()) {
   die('Needs BuddyPress groups to work');
 }
 
