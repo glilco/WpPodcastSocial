@@ -24,42 +24,22 @@ function create_pages_fly($pageName, $pageContent="Starter content") {
 }
 
 function create_podcast_pages() {
-    if( get_page_by_title( 'cadastrapodcast' ) == NULL )
-        create_pages_fly( 'cadastrapodcast' );
-    if( get_page_by_title( 'usuariopodcast' ) == NULL )
-        create_pages_fly( 'usuariopodcast' );
-    if( get_page_by_title( 'uploadopml' ) == NULL )
-        create_pages_fly( 'uploadopml' );   
+    if( get_page_by_title( 'createpodcast' ) == NULL )
+        create_pages_fly( 'createpodcast' );
+    if( get_page_by_title( 'loadpodcastslist' ) == NULL )
+        create_pages_fly( 'loadpodcastslist' );   
 }
 add_action('init', 'create_podcast_pages');
 
 
 
 
-function rewrite_users_podcast(){
-    global $wp; 
-    $wp->add_query_var('podcastusername');
-    add_rewrite_rule(
-        '^user/([^/]+)/?$',
-        'index.php?pagename=usuariopodcast&podcastusername=$matches[1]',
-        'top' );
-        
-    global $wp_rewrite; $wp_rewrite->flush_rules();
-}
-add_action( 'init', 'rewrite_users_podcast' );
-
 function plugin_function_name($template) {
     $pagename = get_query_var('pagename');
-    if(is_page() && $pagename=="usuariopodcast") {
-        $usuario_username = get_query_var('podcastusername');
-		$usuario = get_user_by( "slug", $usuario_username );
-        if($usuario) {
-            return plugin_dir_path( __FILE__ ) . '/page-usuariopodcast.php';
-        }
-    } else if(is_page() && $pagename=='cadastrapodcast') {
-        return plugin_dir_path( __FILE__ ) . '/page-cadastrapodcast.php';
-    } else if(is_page() && $pagename=='uploadopml') {
-        return plugin_dir_path( __FILE__ ) . '/page-uploadopml.php';
+    if(is_page() && $pagename=='createpodcast') {
+        return plugin_dir_path( __FILE__ ) . '/pages/page-createpodcast.php';
+    } else if(is_page() && $pagename=='loadpodcastslist') {
+        return plugin_dir_path( __FILE__ ) . '/pages/page-loadpodcastslist.php';
     }
     return $template;
 }
@@ -67,27 +47,9 @@ add_filter( "page_template", "plugin_function_name" );
 
 
 
- 
-function redireciona_nao_usuario() {
-    $pagename = get_query_var('pagename');
-    if(is_page() && $pagename=="usuariopodcast") {
-        $usuario_username = get_query_var('podcastusername');
-	    $usuario = get_user_by( "slug", $usuario_username );
-        if(!$usuario) {
-            global $wp_query;
-            $wp_query->set_404();
-            status_header(404);
-            nocache_headers();
-        }
-    }
-}
-add_action( 'template_redirect', 'redireciona_nao_usuario' );
+require( plugin_dir_path( __FILE__ ) . '/classes/bp-class-parse-feed.php' );
 
-
-
-require( plugin_dir_path( __FILE__ ) . 'bp-class-parse-feed.php' );
-
-require( plugin_dir_path( __FILE__ ) . 'bp-class-parse-opml.php' );
+require( plugin_dir_path( __FILE__ ) . '/classes/bp-class-parse-opml.php' );
 
 
 
@@ -130,7 +92,7 @@ function recebe_opml() {
 	global $debug_text;
 	
     if (!is_user_logged_in()) {
-        wp_redirect( get_permalink(get_page_by_title( 'uploadopml' )->ID) );
+        wp_redirect( get_permalink(get_page_by_title( 'loadpodcastslist' )->ID) );
     }
     
     $start_time = microtime(true);
@@ -243,9 +205,9 @@ function get_existent_podcast_feed($feed_url, $podcast_site="") {
 add_action( 'wp_enqueue_scripts', 'addcssAndScripts');
 function addcssAndScripts()
 {
-    if ( is_page('uploadopml') )
+    if ( is_page('loadpodcastslist') )
     {
-        wp_enqueue_script( 'load-button', plugin_dir_url( __FILE__ ) . 'bp-load-button.js', array('jquery'));
+        wp_enqueue_script( 'load-button', plugin_dir_url( __FILE__ ) . '/js/bp-load-button.js', array('jquery'));
     }
 }
 
