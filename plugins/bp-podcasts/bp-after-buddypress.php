@@ -201,6 +201,7 @@ function addcssAndScripts()
     {
         wp_enqueue_script( 'load-button', plugin_dir_url( __FILE__ ) . '/js/bp-load-button.js', array('jquery'));
     }
+    wp_enqueue_script( 'hide-group-admin', plugin_dir_url( __FILE__ ) . '/js/bp-hide-group-admin.js', array('jquery'));
 }
 
 
