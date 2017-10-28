@@ -1,6 +1,6 @@
 <?php
 global $debug_text;
-$debug_text = true;
+$debug_text = false;
 
 if(!bp_is_active('groups') && !is_admin()) {
   die('Needs BuddyPress groups to work');
@@ -144,7 +144,6 @@ function create_podcast_feed($feed_url) {
       
       if(!$podcast_data || !isset($podcast_data['TITLE']) || !isset($podcast_data['DESCRIPTION']) || !isset($podcast_data['LINK'])) {
           if($debug_text)echo '<br /> Não foi possível obter dados do podcast ';
-          die();
           return false;
       }
       
