@@ -95,7 +95,6 @@ function recebe_opml() {
         wp_redirect( get_permalink(get_page_by_title( 'loadpodcastslist' )->ID) );
     }
     
-    $start_time = microtime(true);
     
     $user_id = get_current_user_id();
     
@@ -117,13 +116,6 @@ function recebe_opml() {
       }
     }
     
-    $end_time = microtime(true);
-    
-    $difference = formatSeconds(($end_time - $start_time));
-    echo "<br />Tempo para cadastrar todos os podcasts: ". ($end_time - $start_time) ."  <br />";
-    echo "<br />Tempo para cadastrar todos os podcasts: $difference <br />";
-    
-    //die();
     wp_redirect( home_url() );
     exit(); 
 }
