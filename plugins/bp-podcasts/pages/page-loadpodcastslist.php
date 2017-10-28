@@ -19,7 +19,7 @@ get_header(); ?>
 
 <div class="wrap">
 	<div id="primary" class="content-area">
-		<main id="main" class="site-main" role="main">
+		<main id="content" class="site-main" role="main">
       <?php if (is_user_logged_in()) : ?>
       
             <h1>Envie um arquivo OPML com todos os podcasts que você assina!</h1>

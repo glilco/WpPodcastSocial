@@ -19,7 +19,7 @@ get_header(); ?>
 
 <div class="wrap">
 	<div id="primary" class="content-area">
-		<main id="main" class="site-main" role="main">
+		<main id="content" class="site-main" role="main">
             <h1>Cadastre um podcast</h1>
             <p>Se você não encontrou algum podcast que você assina, envie o endereço do feed que ele será cadastrado.</p>
 
