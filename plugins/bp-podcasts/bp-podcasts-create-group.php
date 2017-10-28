@@ -1,10 +1,12 @@
 <?php
 
 function create_a_group($name, $description, $site_link, $feed_url, $image_url, $itunes_image) {
-	$super_admins = get_super_admins();
-    $creator_id = get_user_by('login', $super_admins[0])->ID;
-  
-    
+	//$super_admins = get_super_admins();
+	$user_admin = get_users(array('role'=>'administrator','number'=>1))[0];
+	
+    $creator_id = $user_admin->ID;
+	
+    var_dump($creator_id);
    	$parameters = array(
     'creator_id'   => $creator_id,
 		'name'         => $name,
@@ -62,8 +64,8 @@ function create_a_group($name, $description, $site_link, $feed_url, $image_url, 
 					
 					/* Set SuperUser to be able to change avatar */
 					$save_current_user = wp_get_current_user();
-					$super_user = get_user_by('login', $super_admins[0]);
-					wp_set_current_user($super_user->ID, $super_user->name); 
+					//$super_user = get_user_by('login', $super_admins[0]);
+					wp_set_current_user($user_admin->ID, $user_admin->name); 
 					
 					if(!bp_attachments_create_item_type('avatar', $type_params)) {
 						return false;
