@@ -27,7 +27,11 @@ function create_podcast_pages() {
     if( get_page_by_title( 'createpodcast' ) == NULL )
         create_pages_fly( 'createpodcast' );
     if( get_page_by_title( 'loadpodcastslist' ) == NULL )
-        create_pages_fly( 'loadpodcastslist' );   
+        create_pages_fly( 'loadpodcastslist' );
+    if( get_page_by_title( 'listreceived' ) == NULL )
+        create_pages_fly( 'listreceived' , "<p>A sua lista foi recebida com sucesso e está sendo processada.</p>
+        <p>Em breve, todos os podcasts enviados estarão na sua lista de podcasts assinados.</p>
+        <p>Caso, após alguns minutos, algum dos podcasts da sua lista não tenha sido carregado, entre em contato com o administrador.</p>"); 
 }
 add_action('init', 'create_podcast_pages');
 
@@ -103,27 +107,17 @@ function recebe_opml() {
     $podcasts_urls = $opml_parser->parse_opml_file();
     
     foreach($podcasts_urls as $feed_url) {
-      $podcast = create_podcast_feed($feed_url);
-      if($debug_text)echo '<br/> Podcast:';
-      if($debug_text)var_dump($podcast);
-      if($debug_text)echo '<br/> Feed URL';
-      if($debug_text)var_dump($feed_url);
-      
-      if($podcast) {
-        if($debug_text)echo "<br/> Groups Accept Invite: user: $user_id podcast: $podcast->id ";
-        $accept_user = groups_accept_invite( $user_id , $podcast->id );
-        if($debug_text)var_dump($accept_user);
-      }
+	  wp_schedule_single_event( time() + 10, 'create_podcast_hook', array($feed_url, $user_id) );
     }
     
-    wp_redirect( home_url() );
+    wp_redirect( get_permalink(get_page_by_title( 'listreceived' )->ID) );
     exit(); 
 }
 add_action( 'admin_post_nopriv_upload_opml', 'recebe_opml' );
 add_action( 'admin_post_upload_opml', 'recebe_opml' );
 
-
-function create_podcast_feed($feed_url) {
+add_action( 'create_podcast_hook', 'create_podcast_feed', 10, 2);
+function create_podcast_feed($feed_url, $user_id) {
 	global $debug_text;
     $groups = get_existent_podcast_feed($feed_url);
     
@@ -162,7 +156,11 @@ function create_podcast_feed($feed_url) {
     if($debug_text)echo '<br /> Grupo metadata' . $group->name . '<br />';
     if($debug_text)var_dump(groups_get_groupmeta($group->id));
     if($debug_text)echo '<br /><br />';
-  
+	
+	if(isset($user_id) && trim($user_id) !=='') {
+		groups_accept_invite( $user_id , $group->id );
+	}
+	
     return $group;
 }
 
