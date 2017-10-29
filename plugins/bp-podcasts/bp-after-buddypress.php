@@ -1,6 +1,6 @@
 <?php
 global $debug_text;
-$debug_text = true;
+$debug_text = false;
 
 if(!bp_is_active('groups') && !is_admin()) {
   die('Needs BuddyPress groups to work');
