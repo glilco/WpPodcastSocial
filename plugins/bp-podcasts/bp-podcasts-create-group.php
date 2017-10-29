@@ -37,16 +37,22 @@ function create_a_group($name, $description, $site_link, $feed_url, $image_url, 
 		} else if(!isset($image_url) || trim($image_url) === '' || !@getimagesize($image_url)) {
 			return $id;
 		}
-    
+
 		if(isset($image_url) && trim($image_url) !== '') {
 			$upload_dir   = trailingslashit(wp_upload_dir()['path']);
 			
-			$file_path = $upload_dir . basename($image_url);
+			
+			$image_url_no_parameters = explode("?", $image_url)[0];
+			$image_file_name = basename($image_url_no_parameters);
+			$file_path = $upload_dir . $image_file_name;
+			ini_set ('user_agent', $_SERVER['HTTP_USER_AGENT']); 
 			$file = @fopen($image_url, 'r');
+			
 			
 			if($file) {
 			
-				if(@file_put_contents($file_path, $file)) {
+				if(file_put_contents($file_path, $file)) {
+					
 					$type_params = array(
 						'item_id'   => $id,
 						'object'    => 'group',
@@ -86,9 +92,7 @@ function create_a_group($name, $description, $site_link, $feed_url, $image_url, 
 				}
 			}
 		}
-        
         return $id;
     }
-    
     return false;
 }
