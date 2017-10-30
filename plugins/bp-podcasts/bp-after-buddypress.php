@@ -31,7 +31,9 @@ function create_podcast_pages() {
     if( get_page_by_title( 'listreceived' ) == NULL )
         create_pages_fly( 'listreceived' , "<p>A sua lista foi recebida com sucesso e está sendo processada.</p>
         <p>Em breve, todos os podcasts enviados estarão na sua lista de podcasts assinados.</p>
-        <p>Caso, após alguns minutos, algum dos podcasts da sua lista não tenha sido carregado, entre em contato com o administrador.</p>"); 
+        <p>Caso, após alguns minutos, algum dos podcasts da sua lista não tenha sido carregado, entre em contato com o administrador.</p>");
+    if( get_page_by_title( 'getopmlpodcasts' ) == NULL )
+        create_pages_fly( 'getopmlpodcasts' );
 }
 add_action('init', 'create_podcast_pages');
 
@@ -44,6 +46,8 @@ function plugin_function_name($template) {
         return plugin_dir_path( __FILE__ ) . '/pages/page-createpodcast.php';
     } else if(is_page() && $pagename=='loadpodcastslist') {
         return plugin_dir_path( __FILE__ ) . '/pages/page-loadpodcastslist.php';
+    } else if(is_page() && $pagename=='getopmlpodcasts') {
+        return plugin_dir_path( __FILE__ ) . '/pages/page-getopmlpodcasts.php';
     }
     return $template;
 }
