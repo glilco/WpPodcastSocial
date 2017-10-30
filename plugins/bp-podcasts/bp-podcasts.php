@@ -97,7 +97,7 @@ function my_plugin_init() {
     function exclude_admin_from_podcast( $user_query ) {
         //do not exclude in admin
         if( is_admin() && ! defined( 'DOING_AJAX' ) ) {
-            return $args;
+            return $user_query;
         }
         
         $user_admin = get_users(array('role'=>'administrator','number'=>1))[0];

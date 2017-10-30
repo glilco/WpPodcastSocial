@@ -6,65 +6,13 @@ if(!bp_is_active('groups') && !is_admin()) {
   die('Needs BuddyPress groups to work');
 }
 
-if ( ! function_exists( 'wp_handle_upload' ) ) require_once( ABSPATH . 'wp-admin/includes/file.php' );
-
-
-function create_pages_fly($pageName, $pageContent="Starter content") {
-    $createPage = array(
-      'post_title'    => $pageName,
-      'post_content'  => $pageContent,
-      'post_status'   => 'publish',
-      'post_author'   => 1,
-      'post_type'     => 'page',
-      'post_name'     => $pageName
-    );
-
-    // Insert the post into the database
-    wp_insert_post( $createPage );
-}
-
-function create_podcast_pages() {
-    if( get_page_by_title( 'createpodcast' ) == NULL )
-        create_pages_fly( 'createpodcast' );
-    if( get_page_by_title( 'loadpodcastslist' ) == NULL )
-        create_pages_fly( 'loadpodcastslist' );
-    if( get_page_by_title( 'listreceived' ) == NULL )
-        create_pages_fly( 'listreceived' , "<p>A sua lista foi recebida com sucesso e está sendo processada.</p>
-        <p>Em breve, todos os podcasts enviados estarão na sua lista de podcasts assinados.</p>
-        <p>Caso, após alguns minutos, algum dos podcasts da sua lista não tenha sido carregado, entre em contato com o administrador.</p>");
-    if( get_page_by_title( 'getopmlpodcasts' ) == NULL )
-        create_pages_fly( 'getopmlpodcasts' );
-}
-add_action('init', 'create_podcast_pages');
-
-
-
-
-function plugin_function_name($template) {
-    $pagename = get_query_var('pagename');
-    if(is_page() && $pagename=='createpodcast') {
-        return plugin_dir_path( __FILE__ ) . '/pages/page-createpodcast.php';
-    } else if(is_page() && $pagename=='loadpodcastslist') {
-        return plugin_dir_path( __FILE__ ) . '/pages/page-loadpodcastslist.php';
-    } else if(is_page() && $pagename=='getopmlpodcasts') {
-        return plugin_dir_path( __FILE__ ) . '/pages/page-getopmlpodcasts.php';
-    }
-    return $template;
-}
-add_filter( "page_template", "plugin_function_name" );
-
-
+require( plugin_dir_path( __FILE__ ) . 'bp-create-pages.php' );
 
 require( plugin_dir_path( __FILE__ ) . '/classes/bp-class-parse-feed.php' );
 
 require( plugin_dir_path( __FILE__ ) . '/classes/bp-class-parse-opml.php' );
 
-
-
-/**
- * Create groups
- */
-require plugin_dir_path( __FILE__ ) . '/bp-podcasts-create-group.php';
+require( plugin_dir_path( __FILE__ ) . '/bp-podcasts-create-group.php' );
 
 
 
