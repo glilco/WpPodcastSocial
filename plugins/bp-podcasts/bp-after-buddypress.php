@@ -97,7 +97,7 @@ function recebe_opml() {
     
     $podcasts_urls = $opml_parser->parse_opml_file();
     
-    $time_difference = 5;
+    $time_difference = 10;
     
     $last_time = time();
     foreach($podcasts_urls as $feed_url) {
