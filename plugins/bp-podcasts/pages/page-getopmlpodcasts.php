@@ -1,7 +1,7 @@
 <?php
-ob_clean(); //clear buffer
-header('Content-type: text/xml');
-header('Content-Disposition: attachment; filename="opml_backup.xml"');
+@ob_clean(); //clear buffer
+@header('Content-type: text/xml');
+@header('Content-Disposition: attachment; filename="opml_backup.xml"');
 
 $xml = new SimpleXMLElement('<xml/>');
 $opml = $xml->addChild('opml');
