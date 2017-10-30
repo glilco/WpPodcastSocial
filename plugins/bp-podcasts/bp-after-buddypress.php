@@ -82,23 +82,6 @@ add_action( 'admin_post_nopriv_cadastra_podcast', 'recebe_feed_url' );
 add_action( 'admin_post_cadastra_podcast', 'recebe_feed_url' );
 
 
-function formatSeconds( $seconds )
-{
-  $hours = 0;
-  $milliseconds = str_replace( "0.", '', $seconds - floor( $seconds ) );
-
-  if ( $seconds > 3600 )
-  {
-    $hours = floor( $seconds / 3600 );
-  }
-  $seconds = $seconds % 3600;
-
-
-  return str_pad( $hours, 2, '0', STR_PAD_LEFT )
-       . gmdate( ':i:s', $seconds )
-       . ($milliseconds ? ".$milliseconds" : '')
-  ;
-}
 
 function recebe_opml() {
 	global $debug_text;
@@ -114,7 +97,7 @@ function recebe_opml() {
     
     $podcasts_urls = $opml_parser->parse_opml_file();
     
-    $time_difference = 15;
+    $time_difference = 10;
     
     $last_time = time();
     foreach($podcasts_urls as $feed_url) {
