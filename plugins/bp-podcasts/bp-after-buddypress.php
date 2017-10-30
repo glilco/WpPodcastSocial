@@ -69,7 +69,11 @@ require plugin_dir_path( __FILE__ ) . '/bp-podcasts-create-group.php';
 
 
 function recebe_feed_url() {
-    $podcast = create_podcast_feed($_POST["feed_url"]);
+	$id_usuario='';
+	if(is_user_logged_in()) {
+		$id_usuario=get_current_user_id();
+	}
+    $podcast = create_podcast_feed($_POST["feed_url"], $id_usuario);
     
     wp_redirect( bp_get_group_permalink( $podcast ) );
     exit(); 
