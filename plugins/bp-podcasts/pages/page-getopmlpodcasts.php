@@ -1,4 +1,8 @@
 <?php
+ob_clean(); //clear buffer
+header('Content-type: text/xml');
+header('Content-Disposition: attachment; filename="opml_backup.xml"');
+
 $xml = new SimpleXMLElement('<xml/>');
 $opml = $xml->addChild('opml');
 $opml->addAttribute('version', '1.0');
@@ -20,9 +24,5 @@ if ( bp_has_groups('per_page=0') )  {
 	}
 }
 
-
-ob_clean(); //clear buffer
-header('Content-type: text/xml');
-header('Content-Disposition: attachment; filename="opml_backup.xml"');
 echo $xml->asXML(); 
 exit(); 
