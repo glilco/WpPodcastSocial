@@ -114,8 +114,13 @@ function recebe_opml() {
     
     $podcasts_urls = $opml_parser->parse_opml_file();
     
+    $time_difference = 15;
+    
+    $last_time = time();
     foreach($podcasts_urls as $feed_url) {
-	  wp_schedule_single_event( time() + 10, 'create_podcast_hook', array($feed_url, $user_id) );
+      $sche_time = time() + $time_difference > $last_time + $time_difference?time() + $time_difference:$last_time + $time_difference;
+	  wp_schedule_single_event( $sche_time, 'create_podcast_hook', array($feed_url, $user_id) );
+	  $last_time = $sche_time;
     }
     
     wp_redirect( get_permalink(get_page_by_title( 'listreceived' )->ID) );

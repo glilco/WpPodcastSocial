@@ -82,7 +82,7 @@ class ParseFeed {
    }
    
    function parse_podcast_feed() {
-	 ini_set ('user_agent', $_SERVER['HTTP_USER_AGENT']); 
+	 ini_set("user_agent","Opera/9.80 (Windows NT 6.1; U; Edition Campaign 21; en-GB) Presto/2.7.62 Version/11.00");
      // open xml file
      if (!($handle = @fopen($this->podcast_feed, "r"))) {
         return false;
@@ -97,33 +97,4 @@ class ParseFeed {
      
      return $this->podcast;
    }
-   
-   function checkImageUrl($url) {
-	    // Simple check
-	    if (!$url) { return FALSE; }
-	    // Create cURL resource using the URL string passed in
-	    /*$curl_resource = curl_init($url);
-	    // Set cURL option and execute the "query"
-	    curl_setopt($curl_resource, CURLOPT_RETURNTRANSFER, true);
-	    curl_exec($curl_resource);
-	    // Check for the 404 code (page must have a header that correctly display 404 error code according to HTML standards
-	    if(curl_getinfo($curl_resource, CURLINFO_HTTP_CODE) == 404) {
-	        // Code matches, close resource and return false
-	        curl_close($curl_resource);
-	        return FALSE;
-	    } else {
-	        // No matches, close resource and return true
-	        curl_close($curl_resource);
-	        if(!getimagesize($url)) {
-				return FALSE;
-			}
-	        return TRUE;
-	    }*/
-	    
-	    if(!@getimagesize($url)) {
-			return false;
-		}
-	    // Should never happen, but if something goofy got here, return false value
-	    return true;
-	}
 }

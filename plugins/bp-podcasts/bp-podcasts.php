@@ -66,6 +66,59 @@ function my_plugin_init() {
 	}
 	add_action('bp_group_header_meta' , 'show_field_in_header') ;
 	
+
+	add_filter( 'bp_after_has_members_parse_args', 'buddydev_exclude_users' );
+    function buddydev_exclude_users( $args ) {
+        //do not exclude in admin
+        if( is_admin() && ! defined( 'DOING_AJAX' ) ) {
+            return $args;
+        }
+        
+        $user_admin = get_users(array('role'=>'administrator','number'=>1))[0];
+	
+        $creator_id = $user_admin->ID;
+        
+        $excluded = isset( $args['exclude'] )? $args['exclude'] : array();
+     
+        if( !is_array( $excluded ) ) {
+            $excluded = explode(',', $excluded );
+        }
+        
+        $user_ids = array( $creator_id ); //user ids
+        
+        
+        $excluded = array_merge( $excluded, $user_ids );
+        
+        $args['exclude'] = $excluded;
+        
+        return $args;
+    }
+	add_filter( 'bp_pre_user_query_construct', 'exclude_admin_from_podcast' );
+    function exclude_admin_from_podcast( $user_query ) {
+        //do not exclude in admin
+        if( is_admin() && ! defined( 'DOING_AJAX' ) ) {
+            return $args;
+        }
+        
+        $user_admin = get_users(array('role'=>'administrator','number'=>1))[0];
+	
+        $creator_id = $user_admin->ID;
+        
+        $excluded = isset( $user_query->query_vars['exclude'] )? $user_query->query_vars['exclude'] : array();
+     
+        if( !is_array( $excluded ) ) {
+            $excluded = explode(',', $excluded );
+        }
+        
+        $user_ids = array( $creator_id ); //user ids
+        
+        
+        $excluded = array_merge( $excluded, $user_ids );
+        
+        $user_query->query_vars['exclude'] = $excluded;
+        
+        return $user_query;
+    }
 	
 	
     require( plugin_dir_path( __FILE__ ) . 'bp-after-buddypress.php' );

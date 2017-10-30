@@ -21,7 +21,6 @@ function create_a_group($name, $description, $site_link, $feed_url, $image_url, 
     if ( $saved )
     {
         $id = $saved;
-        groups_update_groupmeta( $id, 'total_member_count', 1 );
         groups_update_groupmeta( $id, 'last_activity', time() );
         
         groups_update_groupmeta( $id, 'podcast-site', esc_url_raw(untrailingslashit($site_link)) );
@@ -45,7 +44,7 @@ function create_a_group($name, $description, $site_link, $feed_url, $image_url, 
 			$image_url_no_parameters = explode("?", $image_url)[0];
 			$image_file_name = basename($image_url_no_parameters);
 			$file_path = $upload_dir . $image_file_name;
-			ini_set ('user_agent', $_SERVER['HTTP_USER_AGENT']); 
+			ini_set("user_agent","Opera/9.80 (Windows NT 6.1; U; Edition Campaign 21; en-GB) Presto/2.7.62 Version/11.00");
 			$file = @fopen($image_url, 'r');
 			
 			
