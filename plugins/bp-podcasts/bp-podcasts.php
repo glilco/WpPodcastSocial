@@ -1,4 +1,9 @@
 <?php
+
+ini_set("log_errors", 1);
+ini_set("error_log", "/tmp/podcasts-php-error.log");
+//error_log( "Hello, errors!" );
+
 /*
 Plugin Name: BuddyPress Podcasts
 Plugin URI: https://github.com/glilco/WpPodcastSocial

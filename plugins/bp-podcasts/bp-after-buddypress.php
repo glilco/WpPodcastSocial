@@ -2,6 +2,12 @@
 global $debug_text;
 $debug_text = false;
 
+function create_podcast_log($message) {
+    //@error_log ( "\n". current_time('timestamp') . " " . $message, 3, trailingslashit(get_home_path()) . "create-podcast.log");
+    @error_log ( "\n$message", 3, "/var/www/html/create-podcast.log");
+}
+
+
 if(!bp_is_active('groups') && !is_admin()) {
   die('Needs BuddyPress groups to work');
 }
@@ -45,7 +51,7 @@ function recebe_opml() {
     
     $podcasts_urls = $opml_parser->parse_opml_file();
     
-    $time_difference = 10;
+    $time_difference = 2;
     
     $last_time = time();
     foreach($podcasts_urls as $feed_url) {
@@ -90,6 +96,7 @@ function create_podcast_feed($feed_url, $user_id, $schedule=0) {
 
 add_action( 'podcast_group_creation_hook', 'parse_feed_and_create_podcast', 10, 2);
 function parse_feed_and_create_podcast($feed_url, $user_id, $schedule = false) {
+  global $debug_text;
 	$feed_parser = new ParseFeed($feed_url);
 	$podcast_data= $feed_parser->parse_podcast_feed();
 	unset($feed_parser);
@@ -126,27 +133,31 @@ function parse_feed_and_create_podcast($feed_url, $user_id, $schedule = false) {
 }
 
 function get_existent_podcast_feed($feed_url, $podcast_site="") {
-	global $debug_text;
-	$meta_query = array(
-      'relation' => 'OR',
-      array(
-          'key'=>'podcast-feed-url',
-          'value'=>esc_url_raw(untrailingslashit($feed_url))
-      )
-	);
-	
-	if(isset($podcast_site) && trim($podcast_site) !== '') {
-		$meta_query[] = array(
-          'key'=>'podcast-site',
-          'value'=>esc_url_raw(untrailingslashit($podcast_site))
-		);
-	}
-	
+    global $debug_text;
+    $meta_query = array(
+        'relation' => 'OR',
+        array(
+            'key'=>'podcast-feed-url',
+            'value'=>esc_url_raw(untrailingslashit($feed_url))
+        )
+    );
+    
+    if(isset($podcast_site) && trim($podcast_site) !== '') {
+      $meta_query[] = array(
+            'key'=>'podcast-site',
+            'value'=>esc_url_raw(untrailingslashit($podcast_site))
+      );
+    }
+    
+    @create_podcast_log("Getting existing podcasts, meta_query:" . var_export($meta_query, true));
+    
     $groups = groups_get_groups(array(
-	  'type'=>'active',
-	  'per_page' => 1,
-      'meta_query' => $meta_query
+      'type'=>'active',
+      'per_page' => 1,
+        'meta_query' => $meta_query
     ));
+    
+    @create_podcast_log("Getting existing podcasts, returned groups:" . var_export($groups, true));
     
     if($debug_text)echo '<br /><br /> Grupos existentes <br />';
     if($debug_text)var_dump($groups);
