@@ -1,27 +1,34 @@
 <?php
 
-function create_a_group($name, $description, $site_link, $feed_url, $image_url, $itunes_image, $itunes_author) {
-	//$super_admins = get_super_admins();
+function create_a_group($name, $description, $site_link, $feed_url, $image_url, $itunes_image, $itunes_author, $id_usuario_add) {
+	
+	$groups = get_existent_podcast_feed($feed_url, $site_link);
+	
+	if($groups['total'] > 0) {
+		$group = $groups['groups'][0];
+		if(isset($id_usuario_add) && trim($id_usuario_add) !=='') {
+			groups_accept_invite( $id_usuario_add , $group->id );
+		}
+		return $group->id;
+	}
+	
 	$user_admin = get_users(array('role'=>'administrator','number'=>1))[0];
 	
     $creator_id = $user_admin->ID;
 	
    	$parameters = array(
-    'creator_id'   => $creator_id,
+		'creator_id'   => $creator_id,
 		'name'         => $name,
 		'description'  => $description,
 		'enable_forum' => 0,
 		'date_created' => bp_core_current_time()
 	);
   
-  
-
     $saved = groups_create_group($parameters);
 
     if ( $saved )
     {
         $id = $saved;
-        groups_update_groupmeta( $id, 'last_activity', time() );
         
         groups_update_groupmeta( $id, 'podcast-site', esc_url_raw(untrailingslashit($site_link)) );
         groups_update_groupmeta( $id, 'podcast-feed-url', esc_url_raw(untrailingslashit($feed_url)) );
@@ -91,6 +98,11 @@ function create_a_group($name, $description, $site_link, $feed_url, $image_url, 
 				}
 			}
 		}
+		
+		if(isset($id_usuario_add) && trim($id_usuario_add) !=='') {
+			groups_accept_invite( $id_usuario_add , $id );
+		}
+		
         return $id;
     }
     return false;

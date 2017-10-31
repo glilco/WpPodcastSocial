@@ -64,3 +64,13 @@ function plugin_function_name($template) {
     return $template;
 }
 add_filter( "page_template", "plugin_function_name" );
+
+add_action( 'wp_enqueue_scripts', 'addcssAndScripts');
+function addcssAndScripts()
+{
+    if ( is_page('loadpodcastslist') )
+    {
+        wp_enqueue_script( 'load-button', plugin_dir_url( __FILE__ ) . '/js/bp-load-button.js', array('jquery'));
+    }
+    wp_enqueue_script( 'hide-group-admin', plugin_dir_url( __FILE__ ) . '/js/bp-hide-group-admin.js', array('jquery'));
+}

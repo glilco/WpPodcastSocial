@@ -35,7 +35,7 @@ function recebe_opml() {
 	global $debug_text;
 	
     if (!is_user_logged_in()) {
-        wp_redirect( get_permalink(get_page_by_title( 'loadpodcastslist' )->ID) );
+        wp_redirect( get_permalink(get_page_by_path( 'loadpodcastslist' )->ID) );
     }
     
     
@@ -50,52 +50,32 @@ function recebe_opml() {
     $last_time = time();
     foreach($podcasts_urls as $feed_url) {
       $sche_time = time() + $time_difference > $last_time + $time_difference?time() + $time_difference:$last_time + $time_difference;
-	  wp_schedule_single_event( $sche_time, 'create_podcast_hook', array($feed_url, $user_id) );
-	  $last_time = $sche_time;
+	  //wp_schedule_single_event( $sche_time, 'create_podcast_hook', array($feed_url, $user_id) );
+	  $created = create_podcast_feed($feed_url, $user_id, $sche_time);
+	  if(!$created) {
+		$last_time = $sche_time;
+	  }
     }
-    
-    wp_redirect( get_permalink(get_page_by_title( 'listreceived' )->ID) );
+    wp_redirect( get_permalink(get_page_by_path( 'listreceived' )->ID) );
     exit(); 
 }
 add_action( 'admin_post_nopriv_upload_opml', 'recebe_opml' );
 add_action( 'admin_post_upload_opml', 'recebe_opml' );
 
-add_action( 'create_podcast_hook', 'create_podcast_feed', 10, 2);
-function create_podcast_feed($feed_url, $user_id) {
+function create_podcast_feed($feed_url, $user_id, $schedule=0) {
 	global $debug_text;
     $groups = get_existent_podcast_feed($feed_url);
     
     
     $group = null;
     if($groups['total'] > 0) {
-      $group = $groups['groups'][0];
+        $group = $groups['groups'][0];
+    } else if($schedule) {
+        wp_schedule_single_event( $schedule, 'podcast_group_creation_hook', array($feed_url, $user_id, true) );
+        return false;
     } else {
-      $feed_parser = new ParseFeed($feed_url);
-      $podcast_data= $feed_parser->parse_podcast_feed();
-      unset($feed_parser);
-      
-      
-      if($debug_text)echo '<br/><br/> Podcast Data:';
-      
-      if($debug_text)var_dump($podcast_data);
-      if($debug_text)echo '<br/><br/>';
-
-      if(!$podcast_data || !isset($podcast_data['TITLE']) || !isset($podcast_data['DESCRIPTION']) || !isset($podcast_data['LINK'])) {
-          if($debug_text)echo '<br /> Não foi possível obter dados do podcast ';
-          return false;
-      }
-      
-      $groups = get_existent_podcast_feed($feed_url, $podcast_data['LINK']);
-      if($groups['total'] > 0) {
-		$group = $groups['groups'][0];
-	  } else {
-		$url_image = isset($podcast_data['URL'])?$podcast_data['URL']:'';
-		$itunes_image = isset($podcast_data['ITUNESIMAGE'])?$podcast_data['ITUNESIMAGE']:'';
-		$itunes_author = isset($podcast_data['ITUNES:AUTHOR'])?$podcast_data['ITUNES:AUTHOR']:'';
-		$group_id = create_a_group($podcast_data['TITLE'], $podcast_data['DESCRIPTION'], $podcast_data['LINK'],  $feed_url, $url_image, $itunes_image, $itunes_author);
-		$group = groups_get_group( array( 'group_id' => $group_id) );
-	  }
-    }
+	    $group = parse_feed_and_create_podcast($feed_url, $user_id);
+	}
     
     if($debug_text)echo '<br /> Grupo metadata' . $group->name . '<br />';
     if($debug_text)var_dump(groups_get_groupmeta($group->id));
@@ -106,6 +86,43 @@ function create_podcast_feed($feed_url, $user_id) {
 	}
 	
     return $group;
+}
+
+add_action( 'podcast_group_creation_hook', 'parse_feed_and_create_podcast', 10, 2);
+function parse_feed_and_create_podcast($feed_url, $user_id, $schedule = false) {
+	$feed_parser = new ParseFeed($feed_url);
+	$podcast_data= $feed_parser->parse_podcast_feed();
+	unset($feed_parser);
+
+
+	if($debug_text)echo '<br/><br/> Podcast Data:';
+
+	if($debug_text)var_dump($podcast_data);
+	if($debug_text)echo '<br/><br/>';
+	if(!$podcast_data || !isset($podcast_data['TITLE']) || !isset($podcast_data['DESCRIPTION']) || !isset($podcast_data['LINK'])) {
+	  if($debug_text)echo '<br /> Não foi possível obter dados do podcast ';
+	  return false;
+	}
+	$group = false;
+
+	$groups = get_existent_podcast_feed($feed_url, $podcast_data['LINK']);
+	if($groups['total'] > 0) {
+		$group = $groups['groups'][0];
+	} else {
+		$url_image = isset($podcast_data['URL'])?$podcast_data['URL']:'';
+		$itunes_image = isset($podcast_data['ITUNESIMAGE'])?$podcast_data['ITUNESIMAGE']:'';
+		$itunes_author = isset($podcast_data['ITUNES:AUTHOR'])?$podcast_data['ITUNES:AUTHOR']:'';
+
+		$group_id = false;
+
+		
+		$group_id = create_a_group($podcast_data['TITLE'], $podcast_data['DESCRIPTION'], $podcast_data['LINK'],  $feed_url, $url_image, $itunes_image, $itunes_author, $user_id);
+			
+		if(!$schedule) {
+			$group = groups_get_group( array( 'group_id' => $group_id) );
+		}
+	}
+	return $group;
 }
 
 function get_existent_podcast_feed($feed_url, $podcast_site="") {
@@ -136,16 +153,3 @@ function get_existent_podcast_feed($feed_url, $podcast_site="") {
     if($debug_text)echo '<br /> Grupos existentes, Feed URL ' . $feed_url . '<br /><br />';
     return $groups;
 }
-
-add_action( 'wp_enqueue_scripts', 'addcssAndScripts');
-function addcssAndScripts()
-{
-    if ( is_page('loadpodcastslist') )
-    {
-        wp_enqueue_script( 'load-button', plugin_dir_url( __FILE__ ) . '/js/bp-load-button.js', array('jquery'));
-    }
-    wp_enqueue_script( 'hide-group-admin', plugin_dir_url( __FILE__ ) . '/js/bp-hide-group-admin.js', array('jquery'));
-}
-
-
-
